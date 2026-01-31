@@ -1,0 +1,82 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
+import { Mail, ArrowLeft } from 'lucide-react';
+import { authApi } from '../../api/authApi';
+import toast from 'react-hot-toast';
+
+const ForgotPassword = () => {
+  const [email, setEmail] = useState('');
+
+  const mutation = useMutation({
+    mutationFn: authApi.requestPasswordReset,
+    onSuccess: () => {
+      toast.success('If email exists, password reset link has been sent');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Error sending reset email');
+    },
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    mutation.mutate({ email });
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-dark-900 via-dark-800 to-dark-900 p-4">
+      <div
+        className="w-full max-w-md bg-white dark:bg-dark-800 rounded-2xl shadow-2xl p-8 animate__animated animate__fadeInUp"
+        data-aos="fade-up"
+      >
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gold-600 dark:text-gold-500 mb-2">
+            Reset Password
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Enter your email to receive a password reset link
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Email
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-dark-600 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent bg-white dark:bg-dark-700 text-gray-900 dark:text-gray-100"
+                placeholder="Enter your email"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={mutation.isPending}
+            className="w-full bg-gold-500 hover:bg-gold-600 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50"
+          >
+            {mutation.isPending ? 'Sending...' : 'Send Reset Link'}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <Link
+            to="/login"
+            className="inline-flex items-center space-x-2 text-gold-600 dark:text-gold-500 hover:underline"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Login</span>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ForgotPassword;
