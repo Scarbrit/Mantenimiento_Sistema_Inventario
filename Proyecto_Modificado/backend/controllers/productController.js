@@ -10,15 +10,8 @@ export const getAllProducts = async (req, res) => {
       search: req.query.search,
     };
 
-    const products = await productModel.getAllProducts(filters);
-    
-    // Get variants for each product
-    const productsWithVariants = await Promise.all(
-      products.map(async (product) => {
-        const variants = await productModel.getProductVariants(product.id);
-        return { ...product, variants };
-      })
-    );
+    // Usar consulta optimizada que evita problema N+1
+    const productsWithVariants = await productModel.getAllProductsWithVariants(filters);
 
     res.json(productsWithVariants);
   } catch (error) {
@@ -31,7 +24,7 @@ export const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
     const product = await productModel.getProductById(id);
-    
+
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
@@ -76,7 +69,7 @@ export const updateProduct = async (req, res) => {
 
     const { id } = req.params;
     const product = await productModel.updateProduct(id, req.body);
-    
+
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
@@ -92,7 +85,7 @@ export const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const product = await productModel.deleteProduct(id);
-    
+
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
@@ -112,7 +105,7 @@ export const createVariant = async (req, res) => {
     }
 
     const variant = await productModel.createVariant(req.body);
-    
+
     // Log inventory addition
     await inventoryLogModel.createInventoryLog({
       variant_id: variant.id,
@@ -143,13 +136,13 @@ export const updateVariant = async (req, res) => {
 
     const { id } = req.params;
     const oldVariant = await productModel.getVariantById(id);
-    
+
     if (!oldVariant) {
       return res.status(404).json({ message: 'Variant not found' });
     }
 
     const variant = await productModel.updateVariant(id, req.body);
-    
+
     // Log inventory change if quantity changed
     if (oldVariant.quantity !== variant.quantity) {
       await inventoryLogModel.createInventoryLog({
@@ -174,7 +167,7 @@ export const deleteVariant = async (req, res) => {
   try {
     const { id } = req.params;
     const variant = await productModel.deleteVariant(id);
-    
+
     if (!variant) {
       return res.status(404).json({ message: 'Variant not found' });
     }
@@ -202,7 +195,7 @@ export const adjustStock = async (req, res) => {
     }
 
     const variant = await productModel.updateVariant(id, { ...oldVariant, quantity: newQuantity });
-    
+
     // Log inventory change
     await inventoryLogModel.createInventoryLog({
       variant_id: variant.id,

@@ -1,27 +1,30 @@
-export const isAuthenticated = (req, res, next) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.status(401).json({ message: 'Unauthorized' });
+// Función factory centralizada para verificación de roles
+export const requireRole = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Si no se especifican roles, solo verificar autenticación
+    if (allowedRoles.length === 0) {
+      return next();
+    }
+
+    // Superadmin tiene acceso a todo
+    if (req.user.role === 'superadmin') {
+      return next();
+    }
+
+    if (allowedRoles.includes(req.user.role)) {
+      return next();
+    }
+
+    res.status(403).json({ message: `Access denied. Required role: ${allowedRoles.join(' or ')}` });
+  };
 };
 
-export const isSuperAdmin = (req, res, next) => {
-  if (req.isAuthenticated() && req.user.role === 'superadmin') {
-    return next();
-  }
-  res.status(403).json({ message: 'Access denied. Superadmin only.' });
-};
-
-export const isAdmin = (req, res, next) => {
-  if (req.isAuthenticated() && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
-    return next();
-  }
-  res.status(403).json({ message: 'Access denied. Admin access required.' });
-};
-
-export const isStaff = (req, res, next) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.status(403).json({ message: 'Access denied. Authentication required.' });
-};
+// Mantener compatibilidad con código existente
+export const isAuthenticated = requireRole();
+export const isSuperAdmin = requireRole('superadmin');
+export const isAdmin = requireRole('admin', 'superadmin');
+export const isStaff = requireRole(); // Equivalente a isAuthenticated

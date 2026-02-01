@@ -49,7 +49,7 @@ export const register = async (req, res) => {
           last_name: user.last_name,
           role: user.role,
         },
-        verification_token: verification_token, // Include token in response for manual verification if needed
+        // Token removido de la respuesta por seguridad - usar endpoint /api/auth/resend-verification
       });
     }
 
